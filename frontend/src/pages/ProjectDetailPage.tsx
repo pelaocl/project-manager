@@ -55,19 +55,20 @@ const ProjectDetailPage: React.FC = () => {
                      <Tooltip title="Volver al listado"><IconButton onClick={() => navigate('/')} aria-label="Volver" sx={{ mr: 1 }}><ArrowBackIcon /></IconButton></Tooltip>
                      <Chip label={project.codigoUnico ?? '-'} size="medium" sx={{ backgroundColor: project.tipologia?.colorChip ?? '#CCCCCC', color: theme => theme.palette.getContrastText(project.tipologia?.colorChip ?? '#CCCCCC'), fontWeight: 'bold', fontSize: '1rem', mr: 2 }} />
                      <Typography variant="h4" component="h1" sx={{ flexGrow: 1, mr: 1 }}> {project.nombre ?? 'Sin Nombre'} </Typography>
-                    {/* Botón Editar - onClick comentado por ahora */}
+                    {/* --- Botón Editar SIN disabled --- */}
                     {canEdit() && (
                         <Button
                             variant="contained"
                             color="primary"
                             startIcon={<EditIcon />}
-                            // onClick={() => { if (project?.id) { navigate(`/projects/${project.id}/edit`) } }} // <-- MANTENER COMENTADO POR AHORA
+                            onClick={() => { if (project?.id) { navigate(`/projects/${project.id}/edit`) } }} // onClick ACTIVO
                             sx={{ flexShrink: 0 }}
-                            disabled // Deshabilitar visualmente mientras onClick está comentado
+                            // disabled // <-- ELIMINADO
                         >
                             Editar
                         </Button>
                      )}
+                    {/* --- Fin Botón Editar --- */}
                 </Box>
                 <Divider sx={{ mb: 3 }} />
                  <Grid container spacing={4}>
