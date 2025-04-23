@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+      "composite": true, // Necesario porque es referenciado por otro tsconfig
+      "skipLibCheck": true,
+      "module": "ESNext", // Usar módulos ES para archivos de config modernos
+      "moduleResolution": "bundler", // O "Node" si 'bundler' da problemas
+      "allowSyntheticDefaultImports": true,
+      "strict": true // Mantener chequeos estrictos
+    },
+    "include": ["vite.config.ts"] // Especifica qué archivos de config debe chequear
+  }

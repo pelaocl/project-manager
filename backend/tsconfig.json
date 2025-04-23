@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+      "target": "ES2016", // O más reciente como ES2020
+      "module": "CommonJS", // Estándar para Node.js
+      "outDir": "./dist", // Carpeta de salida para JS compilado
+      "rootDir": "./src", // Carpeta raíz del código fuente TS
+      "strict": true, // Habilita chequeos estrictos
+      "esModuleInterop": true, // Permite interoperabilidad con módulos CommonJS
+      "skipLibCheck": true, // Evita chequear tipos de librerías
+      "forceConsistentCasingInFileNames": true, // Consistencia en nombres de archivo
+      "resolveJsonModule": true, // Permite importar archivos JSON
+      "moduleResolution": "node", // Cómo resuelve los módulos
+      "sourceMap": true // Genera source maps para debugging
+      // "baseUrl": "./src", // Opcional: para importaciones absolutas
+      // "paths": { ... } // Opcional: alias para importaciones
+    },
+    "include": ["src/**/*"], // Qué archivos incluir en la compilación
+    "exclude": ["node_modules", "**/*.spec.ts"] // Qué excluir
+  }

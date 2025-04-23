@@ -1,0 +1,45 @@
+# Detecta automáticamente archivos de texto y asegura LF en el repositorio
+* text=auto eol=lf
+
+# Declara explícitamente tipos de archivo como texto con LF
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.sql text eol=lf
+*.prisma text eol=lf
+
+# Archivos de Git
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Archivos de Config/Ejemplo
+.env.example text eol=lf
+
+# Lockfiles
+package-lock.json text eol=lf
+yarn.lock text eol=lf
+
+# Archivos binarios (no tocar finales de línea)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.eot binary
+*.otf binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.zip binary
+*.gz binary

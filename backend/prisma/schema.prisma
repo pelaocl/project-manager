@@ -1,0 +1,221 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider   = "postgresql" // Usando PostgreSQL
+  url        = env("DATABASE_URL") // Toma la URL de .env
+}
+
+// ------------------- ENUMS -------------------
+
+enum Role {
+  ADMIN
+  COORDINADOR
+  USUARIO // Rol para Proyectistas/Formuladores/etc. con login
+  // VISITANTE no necesita rol, es quien no está autenticado
+}
+
+enum TipoMoneda {
+  CLP
+  UF
+}
+
+// ------------------- MODELOS PRINCIPALES -------------------
+
+model User {
+  id                                Int                   @id @default(autoincrement())
+  email                             String                @unique
+  password                          String // Se almacenará el hash
+  name                              String
+  role                              Role                  @default(USUARIO)
+  createdAt                         DateTime              @default(now())
+  updatedAt                         DateTime              @updatedAt
+
+  // Relaciones
+  etiquetas                         Etiqueta[]            @relation("UserEtiquetas") // Etiquetas asignadas globalmente al usuario
+  proyectosAsignadosComoProyectista Project[]             @relation("ProyectistaProjects")
+  proyectosAsignadosComoFormulador  Project[]             @relation("FormuladorProjects")
+  proyectosComoColaborador          Project[]             @relation("ProjectCollaborators") // Proyectos donde es colaborador
+  tareasCreadas                     Tarea[]               @relation("TareasCreadasPor")
+  tareasAsignadas                   Tarea[]               @relation("TareasAsignadasA")
+  comentariosBitacora               ComentarioBitacora[]  @relation("ComentariosCreadosPor")
+
+  @@map("users") // Nombre de la tabla en la BD
+}
+
+model Etiqueta {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique // Ej: 'PROYECTISTA', 'FORMULADOR', 'ARQUITECTO'
+  color     String   @default("#FFFFFF") // Color HEX para la etiqueta (ej. en chips)
+
+  // Relaciones
+  usuarios  User[]   @relation("UserEtiquetas")
+
+  @@map("etiquetas")
+}
+
+model Project {
+  id                      Int       @id @default(autoincrement())
+  // Información Básica
+  codigoUnico             String    @unique // Ej: EP-045. Generado en el backend service.
+  nombre                  String
+  descripcion             String?
+  direccion               String?
+  superficieTerreno       Float?    @map("superficie_terreno_m2")
+  superficieEdificacion   Float?    @map("superficie_edificacion_m2")
+  ano                     Int?      @map("ano_inicio") // Año creación iniciativa
+  proyectoPriorizado      Boolean   @default(false) @map("proyecto_priorizado")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  // --- Relaciones de Información Básica (Lookup Tables) ---
+  estado                  EstadoProyecto? @relation(fields: [estadoId], references: [id], onDelete: SetNull)
+  estadoId                Int?            @map("estado_id")
+  unidad                  UnidadMunicipal? @relation(fields: [unidadId], references: [id], onDelete: SetNull)
+  unidadId                Int?            @map("unidad_id")
+  tipologia               TipologiaProyecto? @relation(fields: [tipologiaId], references: [id], onDelete: SetNull)
+  tipologiaId             Int?            @map("tipologia_id")
+  sector                  Sector?         @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  sectorId                Int?            @map("sector_id")
+
+  // --- Información Geográfica (PostGIS) ---
+  // Prisma usa 'Unsupported' si la extensión no está explícitamente activada o para tipos complejos.
+  // Asegúrate que la extensión PostGIS esté habilitada en tu BD y en 'datasource db'.
+  // SRID 4326 es el estándar para Lat/Lon (WGS 84).
+  // location_point          Unsupported("geometry(Point, 4326)")?  @map("location_point")
+  // area_polygon            Unsupported("geometry(Polygon, 4326)")? @map("area_polygon")
+
+  // --- Información del Equipo ---
+  proyectista             User?     @relation("ProyectistaProjects", fields: [proyectistaId], references: [id], onDelete: SetNull)
+  proyectistaId           Int?      @map("proyectista_user_id") // FK a User
+  formulador              User?     @relation("FormuladorProjects", fields: [formuladorId], references: [id], onDelete: SetNull)
+  formuladorId            Int?      @map("formulador_user_id") // FK a User
+  colaboradores           User[]    @relation("ProjectCollaborators") // Usuarios colaboradores (Many-to-Many)
+
+  // --- Información Financiera (Simplificada) ---
+  lineaFinanciamiento     LineaFinanciamiento? @relation(fields: [lineaFinanciamientoId], references: [id], onDelete: SetNull)
+  lineaFinanciamientoId   Int?                 @map("linea_financiamiento_id")
+  programa                Programa?            @relation(fields: [programaId], references: [id], onDelete: SetNull)
+  programaId              Int?                 @map("programa_id")
+  etapaActualFinanciamiento EtapaFinanciamiento? @relation(fields: [etapaFinanciamientoId], references: [id], onDelete: SetNull)
+  etapaFinanciamientoId   Int?                 @map("etapa_financiamiento_id")
+  codigoExpediente        String?              @map("codigo_expediente") // Campo fijo texto
+  fechaPostulacion        DateTime?            @map("fecha_postulacion") // Campo fijo fecha
+  monto                   Decimal?             @db.Decimal(15, 2) // Hasta 15 dígitos, 2 decimales
+  tipoMoneda              TipoMoneda           @default(CLP) @map("tipo_moneda")
+  montoAdjudicado         Decimal?             @db.Decimal(15, 2) @map("monto_adjudicado") // Campo fijo numérico
+  codigoLicitacion        String?              @map("codigo_licitacion") // Ej: ID de MercadoPublico
+
+  // --- Relaciones Adicionales ---
+  tareas                  Tarea[]              @relation("TareasProyecto") // Tareas de la bitácora asociadas
+
+  @@map("projects") // Nombre de la tabla en la BD
+}
+
+
+// ------------------- TABLAS DE BÚSQUEDA (LOOKUP) -------------------
+// Estas tablas contienen opciones para listas desplegables, gestionadas por Admin/Coordinador.
+
+model EstadoProyecto {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique // Ej: 'DISEÑO', 'EJECUCIÓN', 'POSTULACIÓN'
+  proyectos Project[] // Relación inversa
+
+  @@map("estados_proyecto")
+}
+
+model UnidadMunicipal {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique // Ej: 'ARQUITECTURA', 'ASESORÍA URBANA'
+  abreviacion String    @unique // Ej: 'ARQ', 'AU'
+  proyectos   Project[] // Relación inversa
+
+  @@map("unidades_municipales")
+}
+
+model TipologiaProyecto {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique // Ej: 'ESPACIO PÚBLICO', 'EQUIPAMIENTO'
+  abreviacion String    @unique // Ej: 'EP', 'EQ' (Usada para Código Único)
+  colorChip   String    @default("#CCCCCC") @map("color_chip") // Color HEX para el chip del código único
+  proyectos   Project[] // Relación inversa
+
+  @@map("tipologias_proyecto")
+}
+
+model Sector {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique // Ej: 'Centro', 'Pedro de Valdivia', 'Lorenzo Arenas'
+  proyectos Project[] // Relación inversa
+
+  @@map("sectores")
+}
+
+model LineaFinanciamiento {
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique // Ej: 'SUBDERE', 'GORE', 'MINVU', 'MUNICIPAL'
+  programas Programa[] // Programas asociados a esta línea
+  proyectos Project[]  // Relación inversa a proyectos con esta línea
+
+  @@map("lineas_financiamiento")
+}
+
+model Programa {
+  id                    Int                   @id @default(autoincrement())
+  nombre                String                // Ej: 'PMU', 'FNDR', 'DS49' (Puede no ser único globalmente, pero sí por línea?) -> Lo dejamos no único por ahora.
+  lineaFinanciamiento   LineaFinanciamiento   @relation(fields: [lineaFinanciamientoId], references: [id], onDelete: Cascade) // Un programa pertenece a una línea
+  lineaFinanciamientoId Int                   @map("linea_financiamiento_id")
+  proyectos             Project[]             // Relación inversa a proyectos con este programa
+  @@unique([nombre, lineaFinanciamientoId], map: "programa_nombre_linea_idx")
+  @@map("programas")
+}
+
+model EtapaFinanciamiento {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique // Ej: 'ADMISIBILIDAD', 'RECOMENDADO', 'ADJUDICADO'
+  proyectos Project[] // Relación inversa
+
+  @@map("etapas_financiamiento")
+}
+
+
+// ------------------- MODELOS BITÁCORA -------------------
+
+model Tarea {
+  id            Int       @id @default(autoincrement())
+  titulo        String
+  descripcion   String?
+  fechaPlazo    DateTime? @map("fecha_plazo")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relaciones
+  proyecto      Project   @relation("TareasProyecto", fields: [proyectoId], references: [id], onDelete: Cascade) // Tarea pertenece a un proyecto
+  proyectoId    Int       @map("proyecto_id")
+  creadaPor     User      @relation("TareasCreadasPor", fields: [creadaPorId], references: [id], onDelete: Restrict) // Quién creó la tarea
+  creadaPorId   Int       @map("creada_por_user_id")
+  asignadoA     User?     @relation("TareasAsignadasA", fields: [asignadoAId], references: [id], onDelete: SetNull) // A quién se asignó (opcional)
+  asignadoAId   Int?      @map("asignado_a_user_id")
+  comentarios   ComentarioBitacora[] @relation("ComentariosTarea") // Comentarios asociados a esta tarea
+
+  @@map("tareas_bitacora")
+}
+
+model ComentarioBitacora {
+  id          Int       @id @default(autoincrement())
+  contenido   String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relaciones
+  tarea       Tarea     @relation("ComentariosTarea", fields: [tareaId], references: [id], onDelete: Cascade) // Comentario pertenece a una tarea
+  tareaId     Int       @map("tarea_id")
+  creadoPor   User      @relation("ComentariosCreadosPor", fields: [creadoPorId], references: [id], onDelete: Restrict) // Quién escribió el comentario
+  creadoPorId Int       @map("creado_por_user_id")
+
+  @@map("comentarios_bitacora")
+}

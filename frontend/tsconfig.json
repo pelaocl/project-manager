@@ -1,0 +1,37 @@
+{
+    "compilerOptions": {
+      "target": "ESNext", // JS moderno compatible con navegadores actuales via Vite
+      "useDefineForClassFields": true,
+      "lib": ["DOM", "DOM.Iterable", "ESNext"],
+      "allowJs": false,
+      "skipLibCheck": true,
+      "esModuleInterop": true, // Interoperabilidad
+      "allowSyntheticDefaultImports": true,
+      "strict": true, // Chequeos estrictos
+      "forceConsistentCasingInFileNames": true,
+      "module": "ESNext", // Módulos estándar ES
+      "moduleResolution": "Node", // Resolución de módulos para Node/Bundlers
+      "resolveJsonModule": true,
+      "isolatedModules": true,
+      "noEmit": true, // Vite se encarga de la transpilación/bundle, TS solo chequea tipos
+      "jsx": "react-jsx", // Sintaxis JSX moderna
+      "baseUrl": "./src", // Permite importaciones absolutas desde src/
+      "paths": { // Alias (opcional pero útil)
+        "@components/*": ["components/*"],
+        "@pages/*": ["pages/*"],
+        "@services/*": ["services/*"],
+        "@store/*": ["store/*"],
+        "@hooks/*": ["hooks/*"],
+        "@routes/*": ["routes/*"],
+        "@layouts/*": ["layouts/*"],
+        "@styles/*": ["styles/*"],
+        "@utils/*": ["utils/*"],
+        "@types/*": ["types/*"],
+        "@assets/*": ["assets/*"]
+      }
+    },
+    "include": ["src"], // Directorio a incluir
+    "references": [{ "path": "./tsconfig.node.json" }] // Configuración específica para Vite/Node
+  }
+  // Nota: Vite suele generar también un tsconfig.node.json, asegúrate de que exista.
+  // Si no existe al iniciar el proyecto Vite, puedes omitir la línea "references".
